@@ -22,7 +22,8 @@ void LSDsort(int* array,int size,int n)
 	int count[10]={0};
 
 	//统计每一位出现相同数字的个数
-	for(int i=0;i<size;++i)
+	int i=0;
+	for(i=0;i<size;++i)
 	{
 	    int index=array[i]/a%10;
 	    count[index]++;
@@ -30,17 +31,19 @@ void LSDsort(int* array,int size,int n)
 
 	int arr[10]={0};
 
-	for(int i=1;i<size;++i)
+	int j=1;
+	for(j=1;j<size;++j)
 	{
-	    arr[i]=count[i-1]+arr[i-1];
+	    arr[j]=count[j-1]+arr[j-1];
 	}
 
 	memset(tmp,0,sizeof(int)*size);
 
-	for(int i=0;i<size;++i)
+	int k=0;
+	for(k=0;k<size;++k)
 	{
-	    int index=array[i]/a%10;
-	    tmp[arr[index]++]=array[i];
+	    int index=array[k]/a%10;
+	    tmp[arr[index]++]=array[k];
 	}
 
 	memcpy(array,tmp,sizeof(int)*size);
@@ -53,7 +56,8 @@ void LSDsort(int* array,int size,int n)
 
 void PrintArray(int* array,int size)
 {
-    for(int i=0;i<size;++i)
+    int i=0;
+    for(i=0;i<size;++i)
     {
 	printf("%d ",array[i]);
     }
@@ -63,8 +67,8 @@ void PrintArray(int* array,int size)
 int main()
 {
     int array[10]={123,375,914,627,285,547,423,761,834,380};
-    LSDsort(array,sizeof(array)/sizeof(array[0]));
+    LSDsort(array,sizeof(array)/sizeof(array[0]),3);
 
-    PrintArray(array,sizeof(arrat)/sizeof(array[0]));
+    PrintArray(array,sizeof(array)/sizeof(array[0]));
     return 0;
 }
