@@ -269,6 +269,7 @@ private:
 };
 #endif
 
+#if 0
 class Solution
 {
 public:
@@ -308,4 +309,135 @@ public:
 		}
 	}
 };
+#endif
 
+
+#if 0
+#include <stack>
+
+class MyQueue {
+public:
+	/** Initialize your data structure here. */
+	stack<int> s1;
+	stack<int> s2;
+
+	MyQueue()
+	{
+
+	}
+
+	/** Push element x to the back of queue. */
+	void push(int x)
+	{
+		s1.push(x);
+	}
+
+	/** Removes the element from in front of queue and returns that element. */
+	int pop()
+	{
+			while (s1.empty() == false)
+			{
+				s2.push(s1.top());
+				s1.pop();
+			}
+			int a= s2.top();
+
+			s2.pop();
+			while (s2.empty() == false)
+			{
+				s1.push(s2.top());
+				s2.pop();
+			}
+
+			return a;
+	}
+
+	int peek()
+	{
+			while (s1.empty() == false)
+			{
+				s2.push(s1.top());
+				s1.pop();
+			}
+			int a= s2.top();
+
+			while (s2.empty() == false)
+			{
+				s1.push(s2.top());
+				s2.pop();
+			}
+
+			return a;
+	}
+
+	/** Returns whether the queue is empty. */
+	bool empty()
+	{
+		if (s1.empty() == true && s2.empty() == true)
+		{
+			return true;
+		}
+		return false;
+	}
+};
+
+int main()
+{
+	MyQueue q1;
+
+	q1.push(1);
+	q1.push(2);
+
+	cout << q1.peek() << endl;//1
+	cout << q1.pop() << endl;//1
+	cout << q1.empty() << endl;//0
+
+	system("pause");
+}
+#endif
+
+#include<queue>
+
+class Solution {
+public:
+	vector<vector<int>> levelOrder(TreeNode* root) 
+	{
+		vector<vector<int>> vv;
+
+		if (root == nullptr)
+		{
+			return vv;
+		}
+
+		queue<TreeNode*> q;
+
+		q.push(root);
+
+		while (q.empty() == false)
+		{
+			vector<int> level;
+
+			int levelcount = q.size();
+
+			for (int i = 0; i < levelcount; ++i)
+			{
+				TreeNode* pCur = q.front();
+				level.push_back(pCur->val);
+
+				if (pCur->left != nullptr)
+				{
+					q.push(pCur->left);
+				}
+
+				if (pCur->right != nullptr)
+				{
+					q.push(pCur->right);
+				}
+
+				q.pop();
+			}
+			vv.push_back(level);
+		}
+		return vv;
+	}
+};
