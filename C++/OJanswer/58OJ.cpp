@@ -116,3 +116,85 @@ int main()
 	system("pause");
 	return 0;
 }
+
+#if 0
+#include<iostream>
+#include<vector>
+
+using namespace std;
+
+int main()
+{
+	vector<int> v(200);
+
+	for (int i = 0; i < 200; ++i)
+	{
+		cin >> v[i];
+	}
+
+	for (int i = 0; i < 200; ++i)
+	{
+		int count = 0;
+		int tp99 = v[i];
+
+		for (int j = 0; j < 200; ++j)
+		{
+			if (tp99 >= v[j])
+			{
+				count++;
+			}
+		}
+
+		if (count >= 198)
+		{
+			cout << tp99 << endl;
+			break;
+		}
+		else
+		{
+			continue;
+		}
+	}
+
+	system("pause");
+	return 0;
+}
+#endif
+
+#include<iostream>
+#include<string>
+
+using namespace std;
+
+int main()
+{
+	string account;
+
+	while (getline(cin, account))
+	{
+		string a = account.substr(0, account.find("@"));
+		string b = account.substr(account.find("@"));
+
+		string M = "MASK";
+
+		string B;
+		int j = 0;
+
+		for (int i = 1; i < a.size(); i += 2)
+		{
+			a.insert(i, M, j, 1);
+			j++;
+
+			if (j == 4)
+			{
+				j = 0;
+			}
+		}
+
+
+		cout << a + b << endl;
+	}
+
+	system("pause");
+	return 0;
+}
