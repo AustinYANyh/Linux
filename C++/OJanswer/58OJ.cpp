@@ -1,7 +1,14 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #if 0
 #include<iostream>
 #include<string>
 #include<set>
+
+//100,1,2,3,2
+//1,2,3
+//3
+100 1 2 2 3
 
 using namespace std;
 
@@ -42,7 +49,7 @@ int main()
 }
 #endif
 
-
+#if 0
 #include<iostream>
 #include<algorithm>
 #include<vector>
@@ -116,6 +123,7 @@ int main()
 	system("pause");
 	return 0;
 }
+#endif
 
 #if 0
 #include<iostream>
@@ -161,6 +169,7 @@ int main()
 }
 #endif
 
+#if 0
 #include<iostream>
 #include<string>
 
@@ -195,6 +204,270 @@ int main()
 		cout << a + b << endl;
 	}
 
+	system("pause");
+	return 0;
+}
+#endif
+
+#include<iostream>
+#include<vector>
+using namespace std;
+
+
+class Solution1 
+{
+public:
+	bool Find(int target, vector<vector<int> > array)
+	{
+		if (target > array[array.size() - 1][array[0].size() - 1] || target < array[0][0])
+		{
+			return false;
+		}
+
+		int row = array.size();
+		int col = array[0].size();
+
+		int a = 0;
+		int b = col - 1;
+
+		while (a < row && b >= 0)
+		{
+			if (target < array[a][b])
+			{
+				b--;
+			}
+			else if (target > array[a][b])
+			{
+				a++;
+			}
+			else
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+};
+
+/*
+class Solution {
+public:
+	void replaceSpace(char *str, int length)
+	{
+		char tmp = ' ';
+		char a = '%20';
+
+		for (int i = 0; i < length; ++i)
+		{
+			if (str[i] != (char)" ")
+			{
+				tmp += str[i];
+			}
+			else
+			{
+				tmp += a;
+				continue;
+			}
+		}
+
+	}
+};
+*/
+
+struct ListNode 
+{
+	int val;
+	struct ListNode *next;
+	ListNode(int x) :
+		val(x), next(NULL)
+	{
+
+	}
+};
+
+using namespace std;
+
+class Solution3 {
+public:
+	vector<int> printListFromTailToHead(ListNode* head)
+	{
+		vector<int> v;
+
+		if (head == nullptr)
+		{
+			return v;
+		}
+
+		ListNode* pCur = head;
+		ListNode* result = nullptr;
+
+		while (pCur != nullptr)
+		{
+			ListNode* Next = pCur->next;
+			pCur->next = result;
+			result = pCur;
+			pCur = Next;
+		}
+
+		pCur = result;
+
+		while (pCur != nullptr)
+		{
+			v.push_back(pCur->val);
+			pCur = pCur->next;
+		}
+		return v;
+	}
+};
+
+
+struct TreeNode {
+	int val;
+	TreeNode *left;
+	TreeNode *right;
+	TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+};
+
+class Solution4 {
+public:
+	TreeNode* reConstructBinaryTree(vector<int> pre, vector<int> vin)
+	{
+		int index = 0;
+
+		int left = 0;
+		int right = pre.size();
+
+		return _reConstructBinaryTree(pre, vin, index, left, right);
+	}
+
+	TreeNode* _reConstructBinaryTree(vector<int> pre, vector<int> vin, int& index, int left, int right)
+	{
+		if (left >= right)
+		{
+			return nullptr;
+		}
+
+		TreeNode* Root = new TreeNode(pre[index]);
+
+		int i = 0;
+
+		while (vin[i] != pre[index])
+		{
+			i++;
+		}
+
+		if (i > left)
+		{
+			Root->left = _reConstructBinaryTree(pre, vin, ++index, left, i);
+		}
+
+		if (i + 1 < right)
+		{
+			Root->right = _reConstructBinaryTree(pre, vin, ++index, i + 1, right);
+		}
+
+		return Root;
+	}
+};
+
+#include<stack>
+
+void PostOrder(TreeNode* pRoot)
+{
+	if (pRoot != nullptr)
+	{
+		PostOrder(pRoot->left);
+		PostOrder(pRoot->right);
+		cout << pRoot->val << " ";
+	}
+}
+
+class Solution
+{
+public:
+	void push(int node)
+	{
+		s1.push(node);
+	}
+
+	int pop()
+	{
+		while (s1.empty() == false)
+		{
+			s2.push(s1.top());
+			s1.pop();
+		}
+
+		s2.pop();
+
+		while (s2.empty() == false)
+		{
+			s1, push(s2.top());
+			s2.pop();
+		}
+	}
+
+private:
+	stack<int> s1;
+	stack<int> s2;
+};
+
+int main()
+{
+	/*
+	vector<vector<int>> vv;
+
+	vv.resize(2);
+
+	for (int i = 0; i < 2; ++i)
+	{
+		vv[i].resize(4);
+	}
+
+	for (int i = 0; i < 2; ++i)
+	{
+		for (int j = 0; j < 4; ++j)
+		{
+			cin >> vv[i][j];
+		}
+	}
+
+	Solution1 s;
+
+	cout << s.Find(11, vv) << endl;
+	*/
+		/*
+	char* str = "ni hao";
+
+	Solution s;
+
+	s.replaceSpace(str, 6);
+
+	cout << str << endl;
+	*/
+
+	/*
+	vector<int> pre{ 1, 2, 3, 4, 5, 6 };
+	vector<int> in{ 3, 2, 1, 5, 4, 6 };
+
+	int index = 0;
+
+	Solution s;
+	TreeNode* Root = s.reConstructBinaryTree(pre, in);
+
+	PostOrder(Root);
+	*/
+
+	Solution s;
+
+	s.push(1);
+	s.push(2); 
+	s.push(3); 
+	s.push(4);
+
+	s.pop();
+	
+	
 	system("pause");
 	return 0;
 }
