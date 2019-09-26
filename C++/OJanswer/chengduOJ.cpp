@@ -11,20 +11,30 @@ int main()
 
 	while (cin >> n)
 	{
-		vector<int> v(2*n);
+		vector<vector<int>> vv(n);
 
-		for (int i = 0; i <2* n;++i)
+		for (int i = 0; i < n;++i)
 		{
-			cin >> v[i];
+			vv[i].resize(2);
+		}
+
+		for (int i=0;i<vv.size();++i)
+		{
+			for(int j=0;j<vv[0].size();++j)
+			{
+				cin>>vv[i][j];
+			}
 		}
 
 		set<int> s;
 
-		for (auto e : v)
+		for (int i=0;i<vv.size();++i)
 		{
-			s.insert(e);
+			for(int j=0;j<vv[0].size();++j)
+			{
+				s.insert(vv[i][j]);
+			}
 		}
-
 		cout << s.size() << endl;
 	}
 
