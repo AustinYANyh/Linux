@@ -1378,7 +1378,339 @@ public:
     }
 };
 
-//
+//10.3
+
+//不用加减乘除做加法
+class Solution31
+{
+public:
+    int Add(int num1, int num2)
+    {
+        while(num1!=0)
+        {
+            int tmp=num2;
+            num2=num1^num2;
+            num1=num1&tmp;
+            num1<<=1;
+        }
+        return num2;
+    }
+};
+
+//把字符串转换为整数
+class Solution32 
+{
+public:
+    int StrToInt(string str)
+    {
+        long long res = 0;
+        int flag=1;
+
+        if (str[0] == '+')
+        {
+            str[0]='0';
+        }
+
+        if (str[0] == '-')
+        {
+            str[0]='0';
+            flag=-1;
+        }
+
+        for (int i = 0; i < str.size(); ++i)
+        {
+            if (str[i] < '0' || str[i] > '9')
+            {
+                return 0;
+            }
+            res = res * 10 + str[i] - '0';
+            
+            if ((flag==1 && res>INT_MAX) || (flag==-1 && res*flag <INT_MIN))
+		    {
+			    return 0;
+		    }
+        }
+
+        return res*flag;
+    }
+};
+
+//数组中重复的数字(O(N2)常规思路)
+class Solution33
+{
+public:
+    // Parameters:
+    //        numbers:     an array of integers
+    //        length:      the length of array numbers
+    //        duplication: (Output) the duplicated number in the array number
+    // Return value:       true if the input is valid, and there are some duplications in the array number
+    //                     otherwise false
+    bool duplicate(int numbers[], int length, int* duplication) 
+    {
+        for(int i=0;i<length;++i)
+        {
+            for(int j=0;j<length;++j)
+            {
+                if(i!=j && numbers[i]==numbers[j])
+                {
+                    *duplication=numbers[i];
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+};
+
+//哈希映射思想(时空复杂度O(N))
+    bool duplicate(int numbers[], int length, int* duplication)
+    {
+        vector<int> hash(length,0);
+
+        for (int i = 0; i < length; ++i)
+        {
+            hash[numbers[i]]++;
+        }
+
+        for (int i = 0; i < length; ++i)
+        {
+            if (hash[i]>1)
+            {
+                *duplication = i;
+                return true;
+            }
+        }
+		return false;
+    }
+
+//字符流中第一个不重复的字符
+class Solution34
+{
+public:
+  //Insert one char from stringstream
+    char hash[256]={0};
+    string a;
+    
+    void Insert(char ch)
+    {
+        a+=ch;
+        hash[ch]++;
+    }
+  //return the first appearence once char in current stringstream
+    char FirstAppearingOnce()
+    {
+        for(int i=0;i<a.size();++i)
+        {
+            if(hash[a[i]]==1)
+            {
+                return a[i];
+            }
+        }
+        return '#';
+    }
+};
+
+//带环链表的入环点
+class Solution35
+{
+public:
+    ListNode* EntryNodeOfLoop(ListNode* pHead)
+    {
+        if(hasCycle(pHead)==nullptr)
+        {
+            return nullptr;
+        }
+        
+        ListNode* pH=pHead;
+        ListNode* pM=hasCycle(pHead);
+        
+        while(pH!=pM)
+        {
+            pH=pH->next;
+            pM=pM->next;
+        }
+        
+        return pM;
+    }
+    
+	//判断链表是否有环
+    ListNode* hasCycle(ListNode* pHead)
+    {
+        if(pHead==nullptr)
+        {
+            return nullptr;
+        }
+        
+        ListNode* fast=pHead;
+        ListNode* slow=pHead;
+        
+        while(fast!=nullptr && fast->next!=nullptr)
+        {
+            fast=fast->next->next;
+            slow=slow->next;
+            
+            if(fast==slow)
+            {
+                return fast;
+            }
+        }
+        return nullptr;
+    }
+};
+
+//删除链表中重复的节点
+ListNode* deleteDuplication(ListNode* pHead)
+{
+	if (pHead == nullptr || pHead->next == nullptr)
+	{
+		return pHead;
+	}
+
+	ListNode* pPre = pHead;
+	ListNode* pCur = pHead;
+	ListNode* pNext = pHead->next;
+
+	while (pNext != nullptr)
+	{
+		if (pCur->val == pNext->val)
+		{
+			while (pNext!=nullptr && pCur->val == pNext->val)
+			{
+				pNext = pNext->next;
+			}
+
+			if (pCur == pHead)
+			{
+				pHead = pCur = pPre = pNext;
+
+				if (pNext != nullptr)
+				{
+					pNext = pNext->next;
+				}
+			}
+			else
+			{
+				pCur = pNext;
+				pPre->next = pNext;
+				pNext = pCur->next;
+			}
+		}
+		else
+		{
+			pPre = pCur;
+			pCur = pNext;
+			pNext = pNext->next;
+		}
+	}
+
+	return pHead;
+}
+
+//把二叉树打印成多行
+class Solution36 
+{
+public:
+    vector<vector<int>> Print(TreeNode* pRoot)
+    {
+        vector<vector<int>> result;
+
+        if (pRoot == nullptr)
+        {
+            return result;
+        }
+
+        queue<TreeNode*> q;
+        q.push(pRoot);
+
+        while (q.empty() == false)
+        {
+            vector<int> res;
+
+            int size = q.size();
+
+            for (int i = 1; i <= size; ++i)
+            {
+                TreeNode* p = q.front();
+
+                res.push_back(q.front()->val);
+
+                if (p->left != nullptr)
+                {
+                    q.push(p->left);
+                }
+
+                if (p->right != nullptr)
+                {
+                    q.push(p->right);
+                }
+
+                q.pop();
+            }
+
+            result.push_back(res);
+        }
+        return result;
+    }
+};
+
+//数据流中的中位数
+class Solution37 
+{
+public:
+    
+    vector<int> v;
+
+    void Insert(int num)
+    {
+        v.push_back(num);
+    }
+
+    double GetMedian()
+    {
+        sort(v.begin(), v.end());
+
+        if (v.size() % 2 == 0)
+        {
+            double a = v[v.size() >> 1];
+            double b = v[(v.size() >> 1) - 1];
+            return (a + b) / 2;
+        }
+        else
+        {
+            return v[v.size() >> 1];
+        }
+    }
+};
+
+//滑动窗口的最大值
+class Solution 
+{
+public:
+    vector<int> maxInWindows(const vector<int>& num, unsigned int size)
+    {
+        vector<int> v;
+        
+        if(num.size()==0 || size==0 || size>num.size())
+        {
+            return v;
+        }
+        
+        for (int i = 0; i <= num.size() - size; ++i)
+        {
+            int putnumber = 0;
+            int j = 0;
+
+            while (j < size)
+            {
+                putnumber = max(putnumber, num[i + j]);
+                j++;
+            }
+
+            v.push_back(putnumber);
+        }
+        return v;
+    }
+};
 
 int main()
 {
@@ -1410,11 +1742,11 @@ int main()
 	cout<<endl;
 	*/
 
-	string a="luzihan";
+	// string a="luzihan";
 
-	Solution29 s;
+	// Solution29 s;
 
-	cout<<s.LeftRotateString(a,3).c_str()<<endl;
+	// cout<<s.LeftRotateString(a,3).c_str()<<endl;
 
 	system("pause");
 	return 0;
