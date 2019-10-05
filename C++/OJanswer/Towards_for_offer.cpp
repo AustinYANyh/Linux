@@ -1712,6 +1712,138 @@ public:
     }
 };
 
+//正则表达式匹配
+
+//思路参考牛客网的大佬，但是学来的就是我的了
+bool match(char* str, char* pattern)
+{
+	if (*str == '\0' && *pattern == '\0')
+	{
+		return true;
+	}
+
+	if (*str != '\0' && *pattern == '\0')
+	{
+		return false;
+	}
+
+	if (*(pattern + 1) != '*')
+	{
+		if (*str == *pattern || (*str != '\0' && *pattern == '.'))
+		{
+			return match(str + 1, pattern + 1);
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else
+	{
+		if (*str == *pattern || (*str != '\0' && *pattern == '.'))
+		{
+			return match(str, pattern + 2) || match(str + 1, pattern);
+		}
+		else
+		{
+			return match(str, pattern + 2);
+		}
+	}
+}
+
+//二叉树的下一个节点
+
+//时间复杂度O（N），空间复杂度O（N），非最优解法
+void inOrder(vector<TreeLinkNode*>& res, TreeLinkNode* root)
+{
+	if (root != nullptr)
+	{
+		inOrder(res, root->left);
+		res.push_back(root);
+		inOrder(res, root->right);
+	}
+}
+
+
+TreeLinkNode* GetNext(TreeLinkNode* pNode)
+{
+	TreeLinkNode* pCur = pNode;
+
+	while (pCur->next != nullptr)
+	{
+		pCur = pCur->next;
+	}
+
+	vector<TreeLinkNode*> res;
+	inOrder(res, pCur);
+
+	for (int i = 0; i < res.size(); ++i)
+	{
+		if (i != res.size() - 1 && res[i] == pNode)
+		{
+			return res[i + 1];
+		}
+	}
+	return nullptr;
+}
+
+//之字形打印二叉树
+vector<vector<int>> LevelOrder(TreeNode* root)
+{
+	queue<TreeNode*> q;
+
+	vector<vector<int>> result;
+
+	q.push(root);
+
+	while (q.empty() == false)
+	{
+		vector<int> res;
+
+		//size必须单独拿出来，因为插入之后会更改q.size()的值
+		int size = q.size();
+
+		for (int i = 0; i < size; ++i)
+		{
+			res.push_back(q.front()->val);
+
+			TreeNode* p = q.front();
+
+			if (p->left != nullptr)
+			{
+				q.push(p->left);
+			}
+
+			if (p->right != nullptr)
+			{
+				q.push(p->right);
+			}
+
+			q.pop();
+		}
+
+		result.push_back(res);
+	}
+	return result;
+}
+
+vector<vector<int> > Print(TreeNode* pRoot)
+{
+	vector<vector<int>> res = LevelOrder(pRoot);
+
+	for (int i = 0; i < res.size(); ++i)
+	{
+		if (i % 2 != 0)
+		{
+			reverse(res[i].begin(), res[i].end());
+		}
+	}
+
+	return res;
+}
+
+//
+
 int main()
 {
 	/*
