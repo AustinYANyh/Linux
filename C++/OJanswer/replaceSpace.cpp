@@ -99,17 +99,36 @@ int main()
 
 #endif
 
-char* replaceSpace(char* str, int length)
+void replaceSpace(char*& str, int length)
 {
-	char* tmp = new char(1024);
-	int j = 0;
-
-	if (str == nullptr)
+	if (str == nullptr || length < 0)
 	{
-		return tmp;
+		return;
 	}
 
-	for (int i = 0; i<length; ++i)
+	int i = 0;
+	int count = 0;
+	int agolength = 0;
+
+	while (str[i] != '\0')
+	{
+		if (str[i] == ' ')
+		{
+			count++;
+		}
+		agolength++;
+		i++;
+	}
+
+	if (agolength + count * 2 > length)
+	{
+		return;
+	}
+
+	char* tmp = new char[length];
+	int j = 0;
+
+	for (int i = 0; i<agolength; ++i)
 	{
 		if (str[i] == ' ')
 		{
@@ -124,15 +143,18 @@ char* replaceSpace(char* str, int length)
 		}
 	}
 
-	return tmp;
+	str = new char[length];
+	strcpy(str, tmp);
 }
 
 int main()
 {
 
-	char* str = "hello lu";
+	char* str = "hello lua a";
 
-	cout << replaceSpace(str, 9) << endl;
+	replaceSpace(str, 15);
+
+	cout << str << endl;
 
 	system("pause");
 	return 0;
