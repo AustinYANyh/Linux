@@ -5,8 +5,16 @@
 #include<io.h>
 #include"mysql.h"
 #include<set>
+#include<thread>
+#include<mutex>
+#include<signal.h>
 
 using namespace std;
+
+MYSQL* mysql = MySQLInit();
+MySQL mySql(mysql);
+
+mutex _mutex;
 
 //扫描当前路径下目录和文件
 void dataList(string path, vector<string>& dirs, vector<string>& files)
@@ -41,21 +49,20 @@ void dataList(string path, vector<string>& dirs, vector<string>& files)
 class scanManage
 {
 public: 
-	scanManage() 
+	scanManage()
 	{
 
 	}
-
+ 
 	void scanInit(string path)
 	{
 		vector<string> localDirs;
 		vector<string> localFiles;
-		MySQL mysql;
 
 		string whereStr = "select * from everything where path = '";
 		whereStr += path;
 		whereStr += "';";
-		vector<vector<string>> res = mysql.Select(whereStr);
+		vector<vector<string>> res = mySql.Select(whereStr);
 
 		dataList(path, localDirs, localFiles);
 		set<string> setLocal;
@@ -79,16 +86,21 @@ public:
 			sprintf(sql, "select * from everything;");
 			if (*localIt < *dbIt)
 			{
-				vector<vector<string>> res = mysql.Select(sql);
+				vector<vector<string>> res = mySql.Select(sql);
 				int lineno = res.size();
-				sprintf(sql, "insert into everything values(%d,'%s','%s');", lineno + 1, path.c_str(),(*localIt).c_str());
-				mysql.Insert(sql);
-				localIt++; 
+				sprintf(sql, "insert into everything values(%d,'%s','%s');", lineno + 1, path.c_str(), (*localIt).c_str());
+
+				_mutex.lock();
+				mySql.Insert(sql);
+				_mutex.unlock();
+				localIt++;
 			}
 			else if (*localIt > *dbIt)
 			{
 				sprintf(sql, "delete from everything where name='%s';", (*dbIt).c_str());
-				mysql.Delete(sql);
+				_mutex.lock();
+				mySql.Delete(sql);
+				_mutex.unlock();
 				dbIt++;
 			}
 			else
@@ -101,19 +113,23 @@ public:
 		//其中一方有多余,插入到后面或者删除多余部分
 		while (localIt != setLocal.end())
 		{
-			char sql[4096] = { 0 }; 
+			char sql[4096] = { 0 };
 			sprintf(sql, "select * from everything;");
-			vector<vector<string>> res = mysql.Select(sql);
+			vector<vector<string>> res = mySql.Select(sql);
 			int lineno = res.size();
-			sprintf(sql, "insert into everything values(%d,'%s','%s');", lineno + 1, path.c_str(),(*localIt).c_str());
-			mysql.Insert(sql);
+			sprintf(sql, "insert into everything values(%d,'%s','%s');", lineno + 1, path.c_str(), (*localIt).c_str());
+			_mutex.lock();
+			mySql.Insert(sql);
+			_mutex.unlock();
 			localIt++;
 		}
 		while (dbIt != setDb.end())
 		{
 			char sql[4096] = { 0 };
 			sprintf(sql, "delete from everything where name='%s';", (*dbIt).c_str());
-			mysql.Delete(sql);
+			_mutex.lock();
+			mySql.Delete(sql);
+			_mutex.unlock();
 			dbIt++;
 		}
 
@@ -121,24 +137,21 @@ public:
 		for (auto &e : localDirs)
 		{
 			string subPath = path;
-			subPath += "\\";
+			subPath += "/";
 			subPath += e;
 			scanInit(subPath);
 		}
 	}
 
-
-
 	void getDataList()
 	{
-		MySQL mysql;
 		char sql[4096] = { 0 };
 		sprintf(sql, "select * from everything;");
-		vector<vector<string>> res = mysql.Select(sql);
+		vector<vector<string>> res = mySql.Select(sql);
 
 		for (int i = 0; i < res.size(); ++i)
 		{
-			cout << res[i][1] << "       " << res[i][2] << endl;
+			cout << res[i][1] << "		      		" << res[i][2] << endl;
 		}
 	}
 
@@ -147,25 +160,38 @@ public:
 
 	}
 public:
-	MySQL* _mysql;
+	MYSQL* _mysql;
 private:
 	_finddata_t _file; 
 	string _path;
 };
 
-int main()
+void startScan()
 {
-	scanManage scan;
-	vector<string> localDirs;
-	vector<string> localFiles;
-
 	string path;
-	cout << "输入路径:" << endl;
-	cin >> path;
+	path = "D:/zhuomian";
+	//cout << "输入路径:" << endl;
 
+	scanManage scan;
 	scan.scanInit(path);
 	scan.getDataList();
-	
+}
+
+void print(int i)
+{
+	cout << this_thread::get_id() << "============" << i << endl;
+}
+
+int main()
+{
+	signal(SIGINT, [](int)
+	{
+		MySQLRelease(mysql);
+		exit(0);
+	});
+
+	startScan();
+
 	system("pause");
 	return 0;
 }
