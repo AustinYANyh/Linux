@@ -34,11 +34,33 @@ void mainWind::Notify(TNotifyUI& msg)
 		{
 			mainWind::Show();
 		}
-		else if (msg.pSender->GetName() == _T("BTN_CLEAR"))
+		else if (msg.pSender->GetName() == _T("BTN_CLEAR") || msg.pSender->GetName() == _T("BTN_CLEAR2"))
 		{
 			mainWind::Clear();
 		}
+		else if (msg.pSender->GetName() == _T("BTN_SEARCH"))
+		{
+			mainWind::Search();
+		}
 	}
+}
+
+std::string StringFromLPCTSTR(LPCTSTR str)
+{
+#ifdef _UNICODE
+	int size_str = WideCharToMultiByte(CP_UTF8, 0, str, -1, 0, 0, NULL, NULL);
+
+	char* point_new_array = new char[size_str];
+
+	WideCharToMultiByte(CP_UTF8, 0, str, -1, point_new_array, size_str, NULL, NULL);
+
+	std::string return_string(point_new_array);
+	delete[] point_new_array;
+	point_new_array = NULL;
+	return return_string;
+#else
+	return std::string(str);
+#endif
 }
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
@@ -55,8 +77,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 	CPaintManagerUI::SetInstance(hInstance);
 
 	mainWind mainWind;
-
+	//HICON hIcon = ::LoadIcon(hInstance, L"IDI_ICON_LOGO");
+	
 	mainWind.Create(NULL, _T("mainWind"), UI_WNDSTYLE_FRAME, WS_EX_WINDOWEDGE);
+	//HICON hIcon = ::LoadIcon(hInstance, MAKEINTRESOURCE("IDI_ICON_LOGO"));
+	//::SendMessage(mainWind.GetHWND(), STM_SETICON, IMAGE_ICON, (LPARAM)(UINT)hIcon);
 
 	mainWind.CenterWindow();
 

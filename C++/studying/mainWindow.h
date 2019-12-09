@@ -18,6 +18,8 @@ public:
 
 	void Clear();
 
+	void Search(); 
+
 protected:
 
 	virtual CDuiString GetSkinFolder();
@@ -60,4 +62,32 @@ void mainWind::Clear()
 {
 	CListUI* pListUI = (CListUI*)m_PaintManager.FindControl(_T("LISTDATA"));
 	pListUI->RemoveAll();
+
+	CControlUI* clist = m_PaintManager.FindControl(_T("EDI_NAME"));
+	clist->SetText("");
+}
+
+void mainWind::Search()
+{
+	CDuiString strName = ((CEditUI*)m_PaintManager.FindControl(_T("EDI_NAME")))->GetText();
+	char sql[4096] = { 0 };
+
+	//数据库中模糊匹配
+	sprintf_s(sql, "select * from everything where name like '%%%s%%';", StringFromLPCTSTR(strName).c_str());
+	vector<vector<string>> res = DataManager::GetInstance()->Search(sql);
+
+	CListUI* pListUI = (CListUI*)m_PaintManager.FindControl(_T("LISTDATA"));
+	pListUI->RemoveAll();
+	
+	for (int i = 0; i < res.size(); ++i)
+	{
+		CListTextElementUI* pData = new CListTextElementUI;
+		pData->SetAttribute(_T("align"), _T("center"));
+		pListUI->Add(pData);
+
+		//需要的是PLCSTR类型的
+		vector<string>& strItem = res[i];
+		pData->SetText(0, strItem[1].c_str());
+		pData->SetText(1, strItem[2].c_str());
+	}
 }

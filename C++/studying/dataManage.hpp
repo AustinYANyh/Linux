@@ -1,8 +1,9 @@
 #pragma once
 
-#include "mysql.h"
+#include "mysql.hpp"
 #include <vector>
 #include <string>
+
 class DataManager
 {
 public:
@@ -30,7 +31,7 @@ private:
 
 void DataManager::Init()
 {
-	MYSQL* mysql = MySQLInit();
+	_mysql.MySQLInit();
 }
 
 vector<vector<string>> DataManager::Search(string sql)

@@ -1,10 +1,10 @@
-#pragma once
+#pragma ocne
 
 #include<string>
 #include<iostream>
 #include<vector>
 #include<io.h>
-#include"mysql.h"
+#include"dataManage.hpp"
 #include<set>
 #include<thread>
 #include<mutex>
@@ -14,7 +14,7 @@ using namespace std;
 
 
 //扫描当前路径下目录和文件
-void dataList(string path, vector<string>& dirs, vector<string>& files)
+static void dataList(string path, vector<string>& dirs, vector<string>& files)
 {
 	path += "\\*.*";
 	_finddata_t file;
@@ -45,10 +45,7 @@ void dataList(string path, vector<string>& dirs, vector<string>& files)
 
 class scanManage
 {
-	friend MySQL;
-public: 
-
- 
+public:
 	void scanInit(string path);
 
 	void startScan()
@@ -66,8 +63,8 @@ public:
 	static scanManage* CreateIntance()
 	{
 		static scanManage Scan;
-		static std::thread thd(&startScan, &Scan);
-		thd.detach();
+		//static std::thread thd(&startScan, &Scan);
+		//thd.join();
 
 		return &Scan;
 	}
@@ -80,14 +77,13 @@ public:
 	}
 
 public:
-	MYSQL* _mysql;
-
+	mutex _mutex;
 private:
 	scanManage()
 	{
 
 	}
-	_finddata_t _file; 
+	_finddata_t _file;
 	string _path;
 };
 
@@ -99,7 +95,8 @@ void scanManage::scanInit(string path)
 	string whereStr = "select * from everything where path = '";
 	whereStr += path;
 	whereStr += "';";
-	vector<vector<string>> res = _mySql.Select(whereStr);
+
+	vector<vector<string>> res = DataManager::GetInstance()->Search(whereStr);
 
 	dataList(path, localDirs, localFiles);
 	set<string> setLocal;
@@ -123,21 +120,21 @@ void scanManage::scanInit(string path)
 		sprintf_s(sql, "select * from everything;");
 		if (*localIt < *dbIt)
 		{
-			vector<vector<string>> res = mySql.Select(sql);
+			vector<vector<string>> res = DataManager::GetInstance()->Search(sql);
 			int lineno = res.size();
 			sprintf_s(sql, "insert into everything values(%d,'%s','%s');", lineno + 1, path.c_str(), (*localIt).c_str());
 
-			_mutex.lock();
-			mySql.Insert(sql);
-			_mutex.unlock();
+			//_mutex.lock();
+			DataManager::GetInstance()->InsertData(sql);
+			//_mutex.unlock();
 			localIt++;
 		}
 		else if (*localIt > *dbIt)
 		{
 			sprintf_s(sql, "delete from everything where name='%s';", (*dbIt).c_str());
-			_mutex.lock();
-			mySql.Delete(sql);
-			_mutex.unlock();
+			//_mutex.lock();
+			DataManager::GetInstance()->DeleteData(sql);
+			//_mutex.unlock();
 			dbIt++;
 		}
 		else
@@ -152,21 +149,21 @@ void scanManage::scanInit(string path)
 	{
 		char sql[4096] = { 0 };
 		sprintf_s(sql, "select * from everything;");
-		vector<vector<string>> res = mySql.Select(sql);
+		vector<vector<string>> res = DataManager::GetInstance()->Search(sql);
 		int lineno = res.size();
 		sprintf_s(sql, "insert into everything values(%d,'%s','%s');", lineno + 1, path.c_str(), (*localIt).c_str());
-		_mutex.lock();
-		mySql.Insert(sql);
-		_mutex.unlock();
+		//_mutex.lock();
+		DataManager::GetInstance()->InsertData(sql);
+		//_mutex.unlock();
 		localIt++;
 	}
 	while (dbIt != setDb.end())
 	{
 		char sql[4096] = { 0 };
 		sprintf_s(sql, "delete from everything where name='%s';", (*dbIt).c_str());
-		_mutex.lock();
-		mySql.Delete(sql);
-		_mutex.unlock();
+		//_mutex.lock();
+		DataManager::GetInstance()->DeleteData(sql);
+		//_mutex.unlock();
 		dbIt++;
 	}
 
@@ -184,10 +181,29 @@ void scanManage::getDataList()
 {
 	char sql[4096] = { 0 };
 	sprintf_s(sql, "select * from everything;");
-	vector<vector<string>> res = mySql.Select(sql);
+	vector<vector<string>> res = DataManager::GetInstance()->Search(sql);
 
 	for (int i = 0; i < res.size(); ++i)
 	{
-		cout << res[i][1] << "		      		" << res[i][2] << endl;
+		cout << "[" << i + 1 << "]" << " " << res[i][1] << "		      		" << res[i][2] << endl;
 	}
 }
+
+/*
+int main()
+{
+signal(SIGINT, [](int)
+{
+//MySQLRelease(mysql);
+exit(0);
+});
+
+//DataManager::GetInstance()->Init();
+//vector<vector<string>> res = DataManager::GetInstance()->Search("select * from everything;");
+//scanManage::CreateIntance()->startScan();
+scanManage::CreateIntance()->getDataList();
+
+system("pause");
+return 0;
+}
+*/

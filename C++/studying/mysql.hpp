@@ -1,42 +1,26 @@
 #pragma once
 
-#include <iostream>
+#include<iostream>
 #include<WinSock2.h>
 #include<mysql.h>
+#include<string>
 #include<vector>
 
 using namespace std;
-
-static MYSQL* MySQLInit()
-{
-	MYSQL* mysql = mysql_init(NULL);
-
-	mysql_options(mysql, MYSQL_SET_CHARSET_NAME, "utf8");
-
-	if (mysql_real_connect(mysql, "111.229.13.33", "luzihan", "124152", "myeverything", 3306, NULL, 0) == NULL)
-	{
-		cout << "链接失败" << endl;
-		exit(0);
-	}
-	return mysql;
-}
-
 
 class MySQL
 {
 public:
 	MySQL()
 	{
-		_mySql = MySQLInit();
+
 	}
 
-	bool ConnectMysql(const char* host, const char* user, const char* password, const char* dbname);
-
-	~MySQL();
+	bool MySQLInit();
 
 	vector<vector<string>> Select(const string& strSQL);
 
-	bool Insert(const string& strSQL);
+	bool Insert(string& strSQL);
 
 	bool Delete(const string& strSQL);
 
@@ -44,22 +28,23 @@ public:
 
 	bool Update(const string& strSQL);
 
+	~MySQL()
+	{
+		mysql_close(_mySql);
+	}
 private:
 	MYSQL* _mySql;
 };
 
-
-
-MySQL::~MySQL()
+bool MySQL::MySQLInit()
 {
-	mysql_close(_mySql);
-}
+	_mySql = mysql_init(NULL);
 
-bool MySQL::ConnectMysql(const char* host, const char* user, const char* password, const char* dbname)
-{
-	if (mysql_real_connect(_mySql, host, user, password, dbname, 3306, nullptr, 0) == nullptr)
+	mysql_options(_mySql, MYSQL_SET_CHARSET_NAME, "utf8");
+
+	if (mysql_real_connect(_mySql, "111.229.13.33", "luzihan", "124152", "myeverything", 3306, NULL, 0) == NULL)
 	{
-		cout << "连接数据库失败!" << endl;
+		cout << "链接失败" << endl;
 		return false;
 	}
 	return true;
@@ -103,7 +88,7 @@ vector<vector<string>> MySQL::Select(const string& strSQL)
 	return vRet;
 }
 
-bool MySQL::Insert(const string& strSQL)
+bool MySQL::Insert(string& strSQL)
 {
 	if (mysql_query(_mySql, strSQL.c_str()))
 	{
