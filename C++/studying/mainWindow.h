@@ -18,11 +18,14 @@ public:
 
 	void Clear();
 
-	void Search(); 
+	void Search();
+
+	void Search2(); 
 
 protected:
 
 	virtual CDuiString GetSkinFolder();
+
 
 	virtual CDuiString GetSkinFile();
 
@@ -65,9 +68,20 @@ void mainWind::Clear()
 
 	CControlUI* clist = m_PaintManager.FindControl(_T("EDI_NAME"));
 	clist->SetText("");
+	clist = m_PaintManager.FindControl(_T("EDI_PATH"));
+	clist->SetText("");
 }
 
 void mainWind::Search()
+{
+	CDuiString strName = ((CEditUI*)m_PaintManager.FindControl(_T("EDI_PATH")))->GetText();
+
+	scanManage::CreateIntance()->scanInit(StringFromLPCTSTR(strName));
+
+	Show();
+}
+
+void mainWind::Search2()
 {
 	CDuiString strName = ((CEditUI*)m_PaintManager.FindControl(_T("EDI_NAME")))->GetText();
 	char sql[4096] = { 0 };
@@ -88,6 +102,7 @@ void mainWind::Search()
 		//需要的是PLCSTR类型的
 		vector<string>& strItem = res[i];
 		pData->SetText(0, strItem[1].c_str());
+		pData->SetBkColor(0xFF00FF00);
 		pData->SetText(1, strItem[2].c_str());
 	}
 }
