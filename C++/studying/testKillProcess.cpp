@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <vector>
+#include <string>
 #include <tchar.h> //使用_T()
 
 using namespace std;
@@ -73,15 +74,47 @@ int main()
     // BOOL bSel = GetOpenFileName(&ofn);
 
     //USES_CONVERSION;
-    string filename;
-    cin >> filename;
-    HWND hq = FindWindowA(nullptr, filename.c_str()); //W2A(szBuffer));
-    if (hq != nullptr)
+    while (true)
     {
-        //ShowWindow(hq, 0); //隐藏这个窗口
+        cout << "请选择路径: " << endl;
+        vector<string> FileNameList{
+            "E:\\NewWork\\BodorThinker\\projects\\hmi\\BodorThinker2000\\bin\\Debug\\TaskController.exe",
+            "E:\\NewWork\\BodorThinker\\projects\\hmi\\BodorThinker2000\\bin\\Release\\TaskController.exe",
+            "C:\\Users\\29572\\Desktop\\CncTask\\CncTask\\TaskController.exe"};
+
+        for (int i = 0; i < FileNameList.size(); ++i)
+            cout << "               " + to_string(i + 1) << ".  " << FileNameList[i] << endl;
+
+        cout << endl;
+        int index = 0;
+        while (cin >> index)
+        {
+            cout << endl;
+            if (index <= 0 || index > 3)
+            {
+                system("cls");
+                cout << "请选择路径: " << endl;
+                for (int i = 0; i < FileNameList.size(); ++i)
+                    cout << "               " + to_string(i + 1) << ".  " << FileNameList[i] << endl;
+                continue;
+            }
+            break;
+        };
+        string a = FileNameList[index - 1];
+        const char *b = FileNameList[index - 1].c_str();
+        HWND hq = FindWindowA(nullptr, FileNameList[index - 1].c_str()); //W2A(szBuffer));
         DWORD dwPID;
-        DWORD dwThreadID = ::GetWindowThreadProcessId(hq, &dwPID);
-        KillProcess(dwPID);
+        if (hq != nullptr)
+        {
+            //ShowWindow(hq, 0); //隐藏这个窗口
+            DWORD dwThreadID = ::GetWindowThreadProcessId(hq, &dwPID);
+            KillProcess(dwPID);
+            cout << "已杀死进程 " << dwPID << "!" << endl
+                 << endl;
+        }
+        else
+            cout << "该exe未启动...请重新选择..." << endl
+                 << endl;
     }
     return 0;
 }
