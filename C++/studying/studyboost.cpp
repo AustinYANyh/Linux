@@ -62,8 +62,9 @@ int main()
 }
 #endif
 
+#if 0
 #include <boost/filesystem.hpp>
-#include<iostream>
+#include <iostream>
 #include <iomanip>
 
 double TransToG(double kb)
@@ -107,6 +108,96 @@ int main()
 	{
 		std::cerr << e.what() << std::endl;
 	}
+
+	return 0;
+}
+#endif
+
+
+#include <iostream>
+#include <windows.h>
+
+using namespace std;
+
+class Window_Handle
+{
+public:
+	Window_Handle(HANDLE h) :_handle(h)
+	{
+
+	}
+
+	~Window_Handle()
+	{
+		CloseHandle(_handle);
+	}
+
+	Window_Handle(const Window_Handle* data)
+	{
+		_handle = data->_handle;
+	}
+
+	//通过成员函数访问到private的成员变量
+	HANDLE handle() const
+	{
+		return _handle;
+	}
+private:
+	HANDLE _handle;
+};
+
+int main()
+{
+	//通过 OpenProcess() 打开的资源不需要显示的调用 CloseHandle() 来关闭。
+	//当然，应用程序终止时资源也会随之关闭。 
+	//然而，在更加复杂的应用程序里， windows_handle 类确保当一个资源不再使用时就能正确的关闭。 
+	//某个资源一旦离开了它的作用域——上例中 h 的作用域在 main() 函数的末尾——它的析构函数会被自动的调用，
+	//相应的资源也就释放掉了
+	Window_Handle h(OpenProcess(PROCESS_SET_INFORMATION, false, GetCurrentProcessId()));
+	//_handle不可访问,需要通过成员函数访问
+	SetPriorityClass(h.handle(), HIGH_PRIORITY_CLASS);
+
+	auto_ptr<string> p1(new string("lubaobao love fujunjun"));
+	auto_ptr<string> p2;
+
+	p2 = p1;
+	//此时,p1的所有权已被剥夺,p1变为empty,访问p1会报错
+	//p1->append(" heihei");
+
+	unique_ptr<string> p3(new string("lubaobao"));
+	unique_ptr<string> p4;
+	//此时编译器会报错(尝试引用已删除的函数),因为p3、p4是单独占用模式
+	//p3 = p4;	
+
+	//但如果是临时右值,编译器允许
+	p3 = unique_ptr<string>(new string("fujunjun"));
+
+	string tmp = "luzihan is lubaobao";
+	shared_ptr<string> p5(&tmp);
+	shared_ptr<string> p6;
+	p6 = p5;
+	cout << p5.use_count() << endl;
+	cout << p6.use_count() << endl;
+	cout << p5.unique() << endl;
+
+	shared_ptr<string> p7(new string("yanyunhao is funjunjun"));
+	cout << p5.get() << endl;
+	cout << p7.get() << endl;
+	swap(p5, p7);
+	cout << p5.get() << endl;
+	cout << p7.get() << endl;
+
+
+	cout << p5.use_count() << endl;
+	cout << p6.use_count() << endl;
+
+	p6 = p5;
+	cout << p5.use_count() << endl;
+	cout << p6.use_count() << endl;
+
+	p5.reset();
+	cout << p5.use_count() << endl;
+	cout << p6.use_count() << endl;
 
 	return 0;
 }
