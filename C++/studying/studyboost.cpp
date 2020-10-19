@@ -1,5 +1,6 @@
 #define _CRT_SECURE_NO_WARNINGS
 
+//学习字符串处理
 #if 0 
 #include <iostream>
 #include <vector>
@@ -62,6 +63,7 @@ int main()
 }
 #endif
 
+//学习文件系统
 #if 0
 #include <boost/filesystem.hpp>
 #include <iostream>
@@ -113,7 +115,8 @@ int main()
 }
 #endif
 
-
+//学习智能指针
+#if 0
 #include <iostream>
 #include <windows.h>
 
@@ -195,9 +198,110 @@ int main()
 	cout << p5.use_count() << endl;
 	cout << p6.use_count() << endl;
 
+	//在VS 2017以上版本,将引用计数置为0
 	p5.reset();
 	cout << p5.use_count() << endl;
 	cout << p6.use_count() << endl;
 
 	return 0;
 }
+#endif
+
+//一个简单理解多态的Demo
+#if 0
+#include <iostream>
+
+using namespace std;
+
+class softbanker
+{
+public:
+	softbanker()
+	{
+
+	};
+
+	virtual	void DoSomething()
+	{
+		cout << "save money" << endl;
+	}
+};
+
+class softbanker1 :public softbanker
+{
+public:
+	virtual void DoSomething()
+	{
+		cout << "take money" << endl;
+	}
+};
+
+class softbanker2 :public softbanker
+{
+public:
+	virtual void DoSomething()
+	{
+		cout << "change money" << endl;
+	}
+};
+
+int main()
+{
+	softbanker* sbanker = new softbanker();
+	sbanker->DoSomething();
+
+	sbanker = new softbanker1();
+	sbanker->DoSomething();
+
+	sbanker = new softbanker2();
+	sbanker->DoSomething();
+
+	delete sbanker;
+
+	return 0;
+}
+#endif
+
+//学习函数对象(未完)
+#if 1 
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <functional>
+#include <boost/bind.hpp>
+
+using namespace std;
+
+void Print(int i)
+{
+	cout << i << endl;
+}
+
+//for_each中要求的函数仅能接受一个参数
+void Add(int i, int j)
+{
+	cout << i + j << endl;
+}
+
+class add :public binary_function<int, int, void>
+{
+public:
+	void operator()(int i, int j)const
+	{
+		cout << i + j << endl;
+	}
+};
+
+int main()
+{
+	vector<int> v{ 1,2,3 };
+	//for_each(v.begin(), v.end(), Print);
+
+	//遍历打印v中的每个数+10
+	for_each(v.begin(), v.end(), bind1st(add(), 10));
+
+	//使用boost库中的bind方法
+	for_each(v.begin(), v.end(), boost::bind(Add, 10, _1));
+	return 0;
+}
+#endif
