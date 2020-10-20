@@ -283,6 +283,11 @@ void Add(int i, int j)
 	cout << i + j << endl;
 }
 
+bool Compare(int i, int j)
+{
+	return i < j;
+}
+
 class add :public binary_function<int, int, void>
 {
 public:
@@ -301,7 +306,23 @@ int main()
 	for_each(v.begin(), v.end(), bind1st(add(), 10));
 
 	//使用boost库中的bind方法
+	//_1,_2,_3这些都是占位符,Add是二元函数,传入参数10 ,_1将v数组中的元素传入
 	for_each(v.begin(), v.end(), boost::bind(Add, 10, _1));
+
+	swap(v[0], v[1]);
+	for_each(v.begin(), v.end(), Print);
+	//Compare是一个二元函数,_1,_2一次传入v数组中两个数
+	sort(v.begin(), v.end(), boost::bind(Compare, _1, _2));
+	for_each(v.begin(), v.end(), Print);
+
+	//不像for_each只能使用一元函数作为参数
+	//sort中的比较方法可以是多元,上面的bind方法其实不需要
+	sort(v.begin(), v.end(), Compare);
+
+	//不需要改变Compare的定义,就可以改变是升序还是降序
+	sort(v.begin(), v.end(), boost::bind(Compare, _2, _1));
+	for_each(v.begin(), v.end(), Print);
+
 	return 0;
 }
 #endif
