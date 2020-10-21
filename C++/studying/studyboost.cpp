@@ -262,8 +262,8 @@ int main()
 }
 #endif
 
-//学习函数对象(未完)
-#if 1 
+//学习函数对象
+#if 0 
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -322,6 +322,195 @@ int main()
 	//不需要改变Compare的定义,就可以改变是升序还是降序
 	sort(v.begin(), v.end(), boost::bind(Compare, _2, _1));
 	for_each(v.begin(), v.end(), Print);
+
+	return 0;
+}
+#endif
+
+//学习事件处理
+#if 0
+#include <boost/signals2.hpp>
+#include <iostream>
+
+//为了将信号槽函数的返回值写出至标准输出流
+#include <boost/optional/optional_io.hpp>
+
+using namespace std;
+
+void Func()
+{
+	cout << "Hello World!" << endl;
+}
+
+void Func1()
+{
+	cout << "Func1 Called" << endl;
+}
+
+int Func2()
+{
+	return 2;
+}
+
+int Func3()
+{
+	return 3;
+}
+
+namespace my_max_element
+{
+	template<typename T>
+	struct max_element
+	{
+		typedef T result_type;
+		template<typename InputIterator>
+
+		//max_element的返回值为_Fwdlt
+#if 0
+		T operator()(InputIterator first, InputIterator last)const
+		{
+			return *std::max_element(first, last);
+		}
+#endif
+		T operator()(InputIterator first, InputIterator last)const
+		{
+			return T(first, last);
+		}
+	};
+}
+
+int main()
+{
+	boost::signals2::signal<void()> sig;
+	//sig.connect(Func);
+	//sig.connect(Func1);
+
+	//重载方式指定执行顺序
+	sig.connect(1, Func);
+	sig.connect(0, Func1);
+	sig();
+
+	//释放与绑定信号的关联
+	sig.disconnect(Func1);
+	sig();
+
+	//清除所有关联的信号
+	sig.disconnect_all_slots();
+
+	//函数被关联至信号执行后的返回值会被覆盖,只保留最后一个
+	//注意signal<>函数的返回值类型
+	boost::signals2::signal<int()> new_sig;
+	new_sig.connect(Func3);
+	new_sig.connect(Func2);
+	cout << new_sig() << endl;
+
+	//保留每个返回值,重载()操作符,返回最大的其中一个返回值
+	//boost::signals2::signal<int(), my_max_element::max_element<int>> max_sig;
+	boost::signals2::signal<int(), my_max_element::max_element<vector<int>>> max_sig;
+	max_sig.connect(Func3);
+	max_sig.connect(Func2);
+	//cout << max_sig() << endl;
+	vector<int> sig_return_value;
+	sig_return_value = max_sig();
+
+	for (auto e : sig_return_value)
+		cout << e << endl;
+
+	return 0;
+}
+#endif
+
+//学习多线程
+#if 1
+#include <boost/thread.hpp>
+#include <iostream>
+
+void Wait(int seconds)
+{
+	//sleep函数区别于Sleep,位于this_thread命名空间
+	//seconds函数用于获得一个精确的时间,位于boost库的DateTime
+	boost::this_thread::sleep(boost::posix_time::seconds(seconds));
+}
+
+#if 0
+boost::mutex mutex;
+
+void Thread_thread()
+{
+	try
+	{
+		for (int i = 1; i <= 5; ++i)
+		{
+			Wait(1);
+			//mutex.lock();
+
+			//lock_guard类的构造函数中自动调用lock()
+			//lock_guard类的析构函数中自动调用unlock()
+			boost::lock_guard<boost::mutex> lock(mutex);
+
+			std::cout << i << std::endl;
+			//mutex.unlock();
+
+			//lock_guard的生命周期为for循环进入到结束
+		}
+		std::cout << boost::this_thread::get_id() << std::endl;
+	}
+	//中断后会抛出一个thread_interrupted异常
+	catch (boost::thread_interrupted&)
+	{
+
+	}
+}
+#endif
+
+boost::timed_mutex mutex;
+
+void Thread_thread()
+{
+	Wait(1);
+	for (int i = 1; i <= 5; ++i)
+	{
+		boost::unique_lock<boost::timed_mutex> lock(mutex, boost::try_to_lock);
+		if (!lock.owns_lock())
+			lock.timed_lock(boost::get_system_time() + boost::posix_time::seconds(1));
+		std::cout << boost::this_thread::get_id() << ": " << i << std::endl;
+		boost::timed_mutex* m = lock.release();
+		m->unlock();
+	}
+}
+
+int main()
+{
+#if 0
+	boost::thread t(Thread_thread);
+	Wait(3);
+
+	//获得当前线程的线程ID
+	std::cout << boost::this_thread::get_id() << std::endl;
+
+	//3秒后t线程被终止,打印结果为1,2,3
+	t.interrupt();
+
+	//join的作用是阻塞调用,直到调用join的线程运行结束
+	t.join();
+#endif
+
+	//如果函数内不加mutex,可能输出如下:
+	//11
+	//2
+	//2
+	//...
+	//如果函数内加mutex,输出如下:
+	//1
+	//1
+	//2
+	//2
+	//...
+	boost::thread t1(Thread_thread);
+	boost::thread t2(Thread_thread);
+
+	t1.join();
+	t2.join();
 
 	return 0;
 }
