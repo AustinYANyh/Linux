@@ -467,15 +467,104 @@ boost::timed_mutex mutex;
 
 void Thread_thread()
 {
-	Wait(1);
 	for (int i = 1; i <= 5; ++i)
 	{
+		Wait(1);
 		boost::unique_lock<boost::timed_mutex> lock(mutex, boost::try_to_lock);
 		if (!lock.owns_lock())
 			lock.timed_lock(boost::get_system_time() + boost::posix_time::seconds(1));
 		std::cout << boost::this_thread::get_id() << ": " << i << std::endl;
 		boost::timed_mutex* m = lock.release();
 		m->unlock();
+	}
+}
+
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+
+std::vector<int> random_numbers;
+boost::shared_mutex shared_mutex;
+
+#if 0
+void Fill()
+{
+	std::srand(static_cast<unsigned int>(std::time(0)));
+	for (int i = 0; i < 3; ++i)
+	{
+		//这里改变了random_numers的内容,需要独占资源,使用独占锁
+		boost::unique_lock<boost::shared_mutex> lock(shared_mutex);
+		random_numbers.push_back(std::rand());
+
+		//独占锁需要显式调用unlock
+		lock.unlock();
+
+		//等待时间放在最后为了确保random_numbers里至少有一个数据
+		Wait(1);
+	}
+}
+
+void Print()
+{
+	for (int i = 0; i < 3; ++i)
+	{
+		Wait(1);
+		//虽然写到了标准输出,但是不操作random_numbers,所以可以共享互斥体
+		boost::shared_lock<boost::shared_mutex> lock(shared_mutex);
+		std::cout << random_numbers.back() << std::endl;
+	}
+}
+#endif
+
+boost::mutex r_mutex;
+boost::condition_variable_any condition;
+
+void Fill()
+{
+	std::srand(static_cast<unsigned int> (std::time(0)));
+	for (int i = 0; i < 3; ++i)
+	{
+		boost::unique_lock<boost::mutex> lock(r_mutex);
+		random_numbers.push_back(std::rand());
+
+		//数据放完后,size相等,跳出循环,唤醒wait线程
+		condition.notify_all();
+
+		//这边进入等待,直到print出数据,size增加,唤醒这边的wait
+		condition.wait(r_mutex);
+	}
+}
+
+void Print()
+{
+	std::size_t next_size = 1;
+	for (int i = 0; i < 3; ++i)
+	{
+		boost::unique_lock<boost::mutex> lock(r_mutex);
+
+		//数据没拿到一直wait
+		while (random_numbers.size() != next_size)
+			condition.wait(r_mutex);
+
+		//size相等,被唤醒
+		std::cout << random_numbers.back() << std::endl;
+		++next_size;
+
+		//唤醒插入数据的线程的wait
+		condition.notify_all();
+	}
+}
+
+int sum = 0;
+
+void Sum()
+{
+	for (int i = 0; i < 3; ++i)
+	{
+		Wait(1);
+		//只有读操作,
+		boost::shared_lock<boost::shared_mutex> lock(shared_mutex);
+		sum += random_numbers.back();
 	}
 }
 
@@ -495,6 +584,7 @@ int main()
 	t.join();
 #endif
 
+#if 0
 	//如果函数内不加mutex,可能输出如下:
 	//11
 	//2
@@ -511,6 +601,15 @@ int main()
 
 	t1.join();
 	t2.join();
+#endif
+
+	boost::thread thread1(Fill);
+	boost::thread thread2(Print);
+	//boost::thread thread3(Sum);
+
+	thread1.join();
+	thread2.join();
+	//thread3.join();
 
 	return 0;
 }
