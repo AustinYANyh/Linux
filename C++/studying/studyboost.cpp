@@ -421,7 +421,7 @@ int main()
 #endif
 
 //学习多线程
-#if 1
+#if 0
 #include <boost/thread.hpp>
 #include <iostream>
 
@@ -519,6 +519,7 @@ void Print()
 boost::mutex r_mutex;
 boost::condition_variable_any condition;
 
+#if 0
 void Fill()
 {
 	std::srand(static_cast<unsigned int> (std::time(0)));
@@ -567,6 +568,44 @@ void Sum()
 		sum += random_numbers.back();
 	}
 }
+#endif
+
+#if 0
+//静态变量done,srand执行了只一次,生成的随机数2/3是同一个
+void InitNumber()
+{
+	//第二次进来done已经变成true了
+	static bool done = false;
+	if (!done)
+	{
+		done = true;
+		std::srand(static_cast<unsigned int>(std::time(0)));
+	}
+
+}
+#endif
+
+//同一时间完成初始化的话,随机数还是有可能一样
+void InitNumber()
+{
+	boost::thread_specific_ptr<bool> tls;
+	if (!tls.get())
+		//reset参数是指针,C++ 的new出来的是指针,C# 的new出来的是对象
+		tls.reset(new bool(false));
+	if (!*tls)
+	{
+		*tls = true;
+		std::srand(static_cast<unsigned int>(std::time(0)));
+	}
+}
+
+void GenerateNumber()
+{
+	InitNumber();
+	int i = std::rand();
+	boost::unique_lock<boost::mutex> lock(r_mutex);
+	std::cout << i << std::endl;
+}
 
 int main()
 {
@@ -603,6 +642,7 @@ int main()
 	t2.join();
 #endif
 
+#if 0
 	boost::thread thread1(Fill);
 	boost::thread thread2(Print);
 	//boost::thread thread3(Sum);
@@ -610,6 +650,66 @@ int main()
 	thread1.join();
 	thread2.join();
 	//thread3.join();
+#endif
+
+	boost::thread thread[3];
+	for (int i = 0; i < 3; ++i)
+		thread[i] = boost::thread(GenerateNumber);
+	for (int i = 0; i < 3; ++i)
+		thread[i].join();
+
+	return 0;
+}
+#endif
+
+//学习异步输入输出
+#if 1
+#include <boost/asio.hpp>
+#include <boost/thread.hpp>
+#include <iostream>
+
+using namespace std;
+
+boost::asio::io_service service;
+
+//参数好像必须要传一个boost库提供的错误码(引用类型)
+void Async_Cout(const boost::system::error_code& ec)
+{
+	cout << "lubaobao shigezhu" << endl;
+}
+
+void Async_Cout1(const boost::system::error_code& ec)
+{
+	cout << "lubaobao nengchi nengshui" << endl;
+}
+
+void Myrun()
+{
+	service.run();
+}
+
+
+int main()
+{
+	boost::asio::deadline_timer timer(service, boost::posix_time::seconds(5));
+
+#if 0
+	timer.async_wait(Async_Cout);
+	cout << "async is right" << endl;
+
+	//这里调用的run是阻塞式的,如果不是阻塞的,main函数结束调用后程序退出会把异步的方法中断掉
+	service.run();
+#endif
+
+	boost::asio::deadline_timer timer1(service, boost::posix_time::seconds(5));
+
+	timer.async_wait(Async_Cout);
+	timer1.async_wait(Async_Cout1);
+
+	boost::thread thread1(Myrun);
+	boost::thread thread2(Myrun);
+	thread1.join();
+	thread2.join();
 
 	return 0;
 }
