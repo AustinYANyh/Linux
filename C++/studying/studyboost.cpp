@@ -663,7 +663,7 @@ int main()
 #endif
 
 //学习异步输入输出
-#if 1
+#if 0
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <iostream>
@@ -710,6 +710,109 @@ int main()
 	boost::thread thread2(Myrun);
 	thread1.join();
 	thread2.join();
+
+	return 0;
+}
+#endif
+
+//学习boost的网络编程(未完)
+#if 0
+#include <boost/asio.hpp>
+#include <boost/array.hpp>
+#include <iostream>
+#include <string>
+
+boost::asio::io_service io_service;						//io对象
+boost::asio::ip::tcp::resolver resolver(io_service);	//解析器
+boost::asio::ip::tcp::socket sock(io_service);			//socket对象
+boost::array<char, 4096> buffer;						//缓冲区
+
+void Read_Handler(const boost::system::error_code& ec, std::size_t bytes_transferred)
+{
+	if (!ec)
+	{
+		std::cout << std::string(buffer.data(), bytes_transferred) << std::endl;
+		sock.async_read_some(boost::asio::buffer(buffer), Read_Handler);
+	}
+}
+
+void Connect_Handler(const boost::system::error_code& ec)
+{
+	if (!ec)
+	{
+		boost::asio::write(sock, boost::asio::buffer("GET / HTTP 1.1\r\nHost: baidu.com\r\n\r\n"));
+		sock.async_read_some(boost::asio::buffer(buffer), Read_Handler);
+	}
+}
+
+void Resolve_Handler(const boost::system::error_code& ec, boost::asio::ip::tcp::resolver::iterator it)
+{
+	if (!ec)
+	{
+		sock.async_connect(*it, Connect_Handler);
+	}
+}
+
+int main()
+{
+	boost::asio::ip::tcp::resolver::query query("www.baidu.com", "8080");
+	resolver.async_resolve(query, Resolve_Handler);
+	io_service.run();
+
+	return 0;
+}
+
+#endif
+
+//学习进程间通讯
+#if 1
+#include <boost/interprocess/shared_memory_object.hpp>
+#include <boost/interprocess/mapped_region.hpp>
+#include <iostream>
+
+int main()
+{
+	//boost提供的共享内存类，第一个参数指定存在时打开，不存在就创建，第二个参数是共享内存的名字，第三个参数指定共享内存是否可读可写
+	boost::interprocess::shared_memory_object shared_memeroy(boost::interprocess::open_or_create, "lubaobao", boost::interprocess::read_write);
+
+	//申请共享内存的大小,如果共享内存不是可读可写状态下使用会抛出异常
+	shared_memeroy.truncate(1024);
+
+	//获取共享内存的名字
+	std::cout << shared_memeroy.get_name() << std::endl;
+
+	boost::interprocess::offset_t size;
+	if (shared_memeroy.get_size(size))
+	{
+		std::cout << size << std::endl;
+	}
+
+	//同一个共享内存,映射两个map,地址不同,大小一样
+#if 0
+	boost::interprocess::mapped_region region1(shared_memeroy, boost::interprocess::read_write);
+	//hex用来进行十六进制输出
+	std::cout << std::hex << "0x" << region1.get_address() << std::endl;
+	std::cout << std::dec << region1.get_size() << std::endl;
+
+	boost::interprocess::mapped_region region2(shared_memeroy, boost::interprocess::read_write);
+	std::cout << std::hex << "0x" << region2.get_address() << std::endl;
+	std::cout << std::dec << region2.get_size() << std::endl;
+#endif
+
+
+	boost::interprocess::mapped_region region1(shared_memeroy, boost::interprocess::read_write);
+	boost::interprocess::mapped_region region2(shared_memeroy, boost::interprocess::read_only);
+
+
+	//区域1的开头被写入数字37
+	int* it1 = static_cast<int*>(region1.get_address());
+	*it1 = 37;
+
+	//读取区域2开头位置,内容也是37
+
+	//两个区域其实访问的是同一块共享内存
+	int* it2 = static_cast<int*>(region2.get_address());
+	std::cout << *it2 << std::endl;
 
 	return 0;
 }
