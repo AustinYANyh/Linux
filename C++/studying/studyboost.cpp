@@ -769,7 +769,28 @@ int main()
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <iostream>
+#include <boost/bind.hpp>
 
+#include <boost/interprocess/windows_shared_memory.hpp>
+
+#include <boost/interprocess/managed_shared_memory.hpp>
+
+#include <boost/interprocess/containers/string.hpp>
+#include <boost/interprocess/allocators/allocator.hpp>
+
+#include <boost/interprocess/sync/named_mutex.hpp>
+
+boost::interprocess::managed_shared_memory* atomic_sharedmemory;
+
+void Construct_func()
+{
+	atomic_sharedmemory->construct<int>("Integer_1")(37);
+	atomic_sharedmemory->construct<float>("Float_1")(37.13);
+}
+
+void (*pf)();
+
+#if 1
 int main()
 {
 	//boost提供的共享内存类，第一个参数指定存在时打开，不存在就创建，第二个参数是共享内存的名字，第三个参数指定共享内存是否可读可写
@@ -790,10 +811,11 @@ int main()
 	//同一个共享内存,映射两个map,地址不同,大小一样
 #if 0
 	boost::interprocess::mapped_region region1(shared_memeroy, boost::interprocess::read_write);
-	//hex用来进行十六进制输出
+	//hex用来进行十六进制表示,十进制输出
 	std::cout << std::hex << "0x" << region1.get_address() << std::endl;
 	std::cout << std::dec << region1.get_size() << std::endl;
 
+	//dec用来进行八进制表示,十进制输出
 	boost::interprocess::mapped_region region2(shared_memeroy, boost::interprocess::read_write);
 	std::cout << std::hex << "0x" << region2.get_address() << std::endl;
 	std::cout << std::dec << region2.get_size() << std::endl;
@@ -814,6 +836,125 @@ int main()
 	int* it2 = static_cast<int*>(region2.get_address());
 	std::cout << *it2 << std::endl;
 
+	//remove函数用来删除开辟出的共享内存,位于shared_memory_object命名空间内,重新启动后会自动删除,windows情况下不会删除,所以windows下必须remove
+	bool remove = boost::interprocess::shared_memory_object::remove("lubaobao");
+	std::cout << remove << std::endl;
+
+	//windows专用的共享内存类,第四个参数为共享内存的大小,最后一个程序终止后会自动删除
+	boost::interprocess::windows_shared_memory windows_sharedmemory(boost::interprocess::open_or_create, "fujunjun", boost::interprocess::read_write, 1024);
+	boost::interprocess::shared_memory_object::remove("fujunjun");
+
+	boost::interprocess::shared_memory_object::remove("lubaobao");
+	//不需要指定是否可读可写
+	boost::interprocess::managed_shared_memory managed_sharedmemory(boost::interprocess::open_or_create, "lubaobao", 1024);
+
+	//construct后必须指定类型
+	int* i = managed_sharedmemory.construct<int>("Integer")(80);
+	std::cout << *i << std::endl;
+
+	//find方法作用是在共享内存中找到名为Integer的变量,返回类型是pair
+	//pair是将两个(不同类型)数据组合成一个数据,通常在函数需要返回两个数据时使用,数组也可以返回多个数据但是类型必须一致
+	std::pair<int*, std::size_t> pair = managed_sharedmemory.find<int>("Integer");
+	if (pair.first)
+	{
+		std::cout << pair.first << std::endl;
+		std::cout << *pair.first << std::endl;
+	}
+
+	//second用于判断申请出的是变量还是数组,如果是变量second为1,如果是数组,second是数组元素的个数,所有元素都被初始化为99
+	int* ii = managed_sharedmemory.construct<int>("Integer_array")[10](99);
+	pair = managed_sharedmemory.find<int>("Integer_array");
+
+	if (pair.first)
+	{
+		std::cout << *pair.first << std::endl;
+		std::cout << pair.second << std::endl;
+	}
+
+	//如果对象已存在,construct会失败,或者申请的数组长度大于共享内存的大小,会抛出bad alloc异常
+	try
+	{
+		int* iii = managed_sharedmemory.construct<int>("Integer_more")[4096](99);
+	}
+	catch (const boost::interprocess::bad_alloc& ec)
+	{
+		std::cout << ec.what() << std::endl;
+	}
+
+	//destroy函数用于删除在共享内存中创建的对象,使用方法为 共享内存对象名+.访问
+	managed_sharedmemory.destroy<int>("Integer_array");
+
+	//如果不重新find,pair不会更新
+	pair = managed_sharedmemory.find<int>("Integer_array");
+
+	//对象已被删除,返回nullptr,不可以解引用
+	std::cout << pair.first << std::endl;
+
+	//在共享内存上使用string
+	boost::interprocess::shared_memory_object::remove("lubaobao");
+	boost::interprocess::managed_shared_memory str_sharedmemory(boost::interprocess::open_or_create, "luer", 1024);
+
+	//根据boost库的提示,传入对应的参数
+	typedef boost::interprocess::allocator<char, boost::interprocess::managed_shared_memory::segment_manager> CharAllocator;
+	typedef boost::interprocess::basic_string<char, std::char_traits<char>, CharAllocator> string;
+
+	//find_or_construct函数作用是存在对象就找,不存在就构建<>中传入类型,最后一个()中第一个参数是内容,第二个参数是共享内存的段管理器
+	string* s = str_sharedmemory.find_or_construct<string>("Str")("lu baobao love", str_sharedmemory.get_segment_manager());
+	s->insert(14, " fu jun jun");
+
+	std::cout << *s << std::endl;
+
+	//使用完必须清掉,否则会持续写入
+	boost::interprocess::shared_memory_object::remove("luer");
+
+	atomic_sharedmemory = new boost::interprocess::managed_shared_memory(boost::interprocess::open_or_create, "luer", 1024);
+
+	pf = Construct_func;
+	//atomic_func的要求是无参,无返回值,所以使用boost库的bind方法把参数传递
+
+	//但是,boost库提供的示例源码编译不过,尝试修改无果,将函数指针传入atomic_func,函数修改为无参,控制共享内存对象的指针操作
+	atomic_sharedmemory->atomic_func(pf);
+
+	std::cout << *atomic_sharedmemory->find<int>("Integer_1").first << std::endl;
+	std::cout << *atomic_sharedmemory->find<float>("Float_1").first << std::endl;
+
+	boost::interprocess::shared_memory_object::remove("luer");
+
 	return 0;
 }
+#endif
+
+#if 0
+int main()
+{
+	//boost库中thread里的mutex同步方法,适用于同一进程,不同进程的数据同步需要使用nameed_mutex,此类位于interprocess/sync下
+	boost::interprocess::managed_shared_memory mutex_sharedmemory(boost::interprocess::open_or_create, "luer", 1024);
+
+#if 0
+	//第一个参数指定打开/创建,第二个参数是锁的名字,知道锁名称的应用程序都能访问到锁
+	boost::interprocess::named_mutex mutex(boost::interprocess::open_or_create, "mtx");
+
+	int* iiii = mutex_sharedmemory.find_or_construct<int>("Mutex_Integer")();
+
+	mutex.lock();
+	++(*iiii);
+	std::cout << *iiii << std::endl;
+	mutex.unlock();
+#endif
+
+	//interprocess_mutex可以由共享内存对象构建出来,返回指针
+	boost::interprocess::interprocess_mutex* mutex = mutex_sharedmemory.find_or_construct<boost::interprocess::interprocess_mutex>("mtx")();
+
+	int* iiii = mutex_sharedmemory.find_or_construct<int>("Mutex_Integer")();
+
+	mutex->lock();
+	++(*iiii);
+	std::cout << *iiii << std::endl;
+	mutex->unlock();
+
+	return 0;
+}#endif
+
+#endif
+
 #endif
