@@ -1,4 +1,5 @@
 #define _CRT_SECURE_NO_WARNINGS
+#define _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
 
 //学习字符串处理
 #if 0 
@@ -765,7 +766,7 @@ int main()
 #endif
 
 //学习进程间通讯
-#if 1
+#if 0
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <iostream>
@@ -824,7 +825,6 @@ int main()
 
 	boost::interprocess::mapped_region region1(shared_memeroy, boost::interprocess::read_write);
 	boost::interprocess::mapped_region region2(shared_memeroy, boost::interprocess::read_only);
-
 
 	//区域1的开头被写入数字37
 	int* it1 = static_cast<int*>(region1.get_address());
@@ -953,8 +953,139 @@ int main()
 	mutex->unlock();
 
 	return 0;
-}#endif
+}
+#endif
 
 #endif
 
+//学习boost的容器
+#if 1
+#include <iostream>
+#include <string>
+
+//#include <boost/array.hpp>
+
+#include <boost/unordered_set.hpp>
+
+#include <boost/unordered_map.hpp>
+
+#include <boost/bimap.hpp>
+
+#include <boost/bimap/multiset_of.hpp>
+
+//如果是自定义的类型,boost不能识别,需要自己提供==运算符和hash_value函数计算哈希值
+class person
+{
+public:
+	person(std::string name, int age) :_name(name), _age(age)
+	{
+
+	}
+
+	bool operator==(const person& p)const
+	{
+		return p._name == _name && p._age == _age;
+	}
+
+	//boost库示例代码为person const& p,本质没有区别,个人习惯而已
+	//const放在指针左右才有区别,左值右向
+	size_t hash_value(const person& p)
+	{
+		size_t result = 0;
+		boost::hash_combine(result, p._name);
+		boost::hash_combine(result, p._age);
+		return result;
+	}
+private:
+	std::string _name;
+	int _age;
+};
+
+int main()
+{
+#if 0
+	typedef boost::array<std::string, 3> array;
+
+	//C++初始化方式
+	array a{ "lubaobao","love","lubaobao" };
+
+#if 0
+	a[0] = "lubaobao";
+	a.at(1) = "love";
+	a[2] = "lubaobao";
+#endif
+
+	//rend()不可以赋值,反向迭代器返回数组第一个元素前面的位置
+	//rbegin()指向数组最后一个元素的位置
+	//end()指向数组最后一个元素后面的位置
+	//begin()指向数组第一个元素的位置
+	* a.rbegin() = "fujunjun";
+
+	for (auto e : a)
+		std::cout << e << std::endl;
+#endif
+
+#if 0
+	typedef boost::unordered_set<std::string> un_set;
+	un_set* s = new un_set();
+
+	s->insert("lubaobao");
+	s->insert("taixihuan");
+	s->insert("fujunjun le");
+
+
+	//此处的iterator是un_set下的,不是boost::unordered_set命名空间下的
+	//::作用域限定符,表示作用域和所属关系
+	for (un_set::iterator it = s->begin(); it != s->end(); ++it)
+	{
+		std::cout << *it << std::endl;
+	}
+
+#if 0
+	for (auto e : *s)
+	{
+		std::cout << e << std::endl;
+	}
+#endif
+
+#endif
+
+#if 0
+	typedef boost::unordered_map<std::string, int> un_map;
+	un_map* um = new un_map();
+
+	//此处的value_type是un_map所属,不是命名空间所属
+	um->insert(un_map::value_type("lubaobao", 0));
+	um->insert(un_map::value_type("fujunjun", 1));
+
+	for (auto e : *um)
+	{
+		std::cout << e.first << "," << e.second << std::endl;
+	}
+
+	std::cout << (um->find("lubaobao") != um->end()) << std::endl;
+#endif
+
+	typedef boost::bimap<std::string, int> bi_map;
+	bi_map* bm = new bi_map();
+
+	bm->insert(bi_map::value_type("lubaobao", 18));
+	bm->insert(bi_map::value_type("fujunjun", 24));
+
+	//auto for中使用:,C#中的auto使用in
+	for (auto e : *bm)
+	{
+		std::cout << e.left << " is " << e.right << " years old" << std::endl;
+	}
+
+	typedef boost::bimap<boost::bimaps::set_of<std::string>, boost::bimaps::multiset_of<int>> multi_bi_map;
+	multi_bi_map* mbm = new multi_bi_map();
+
+	mbm->insert(multi_bi_map::value_type("lubaobao", 18));
+	mbm->insert(multi_bi_map::value_type("fujunjun", 18));
+
+	std::cout << mbm->right.count(18) << std::endl;
+
+	return 0;
+}
 #endif
