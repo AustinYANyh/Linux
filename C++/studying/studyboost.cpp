@@ -959,7 +959,7 @@ int main()
 #endif
 
 //学习boost的容器
-#if 1
+#if 0 
 #include <iostream>
 #include <string>
 
@@ -1085,6 +1085,241 @@ int main()
 	mbm->insert(multi_bi_map::value_type("fujunjun", 18));
 
 	std::cout << mbm->right.count(18) << std::endl;
+
+	return 0;
+}
+#endif
+
+//学习boost的数据结构
+#if 0
+#include <iostream>
+#include <string>
+
+#include <boost/tuple/tuple.hpp>
+
+//此头文件用于将tuple写入流中
+#include <boost/tuple/tuple_io.hpp>
+
+//类似于python的弱类型
+#include <boost/any.hpp>
+
+#include <boost/variant.hpp>
+
+boost::tuple<std::string, int> Func()
+{
+	//使用boost命名空间下的make_tuple也可以创建一个元组
+	return boost::make_tuple("Error_message", 1024);
+}
+
+#if 0
+int main()
+{
+#if 0
+	//元组,与pair不同的是,pair只能存两个不同类型的变量,而tuple可以存无限个
+	boost::tuple <std::string, std::string, int> tp("lubaobao", "fujunjun", 9999999);
+
+	std::cout << tp << std::endl;
+
+	//使用对象+.访问get函数,<>中为索引号
+	//使用boost命名空间下的get函数,<>中索引号,参数为元组对象
+
+	//索引值的合法性会在编译时检查
+	std::cout << tp.get<0>() << std::endl;
+	std::cout << boost::get<1>(tp) << std::endl;
+#endif
+
+#if 0
+	typedef boost::tuple <std::string&, std::string&, int&>	tp;
+
+	string my_name = "fujunjun";
+	string my_wife_name = "lubaobao";
+	int we_together_time = 9999999;
+
+	tp _tp = boost::tie(my_name, my_wife_name, we_together_time);
+	we_together_time = 999999999;
+
+	std::cout << _tp << std::endl;
+#endif
+
+	//boost库的拆箱操作
+	std::string error_msg;
+	int error_code;
+
+	boost::tie(error_msg, error_code) = Func();
+
+	std::cout << error_msg << std::endl;
+	std::cout << error_code << std::endl;
+
+	return 0;
+}
+#endif
+
+int main()
+{
+	boost::any any_type_a = 1;
+	any_type_a = true;
+	//any_type_a = "lu he tu";
+
+	//但是不能直接输出,还是需要类型转换
+	//类型转换错误的话,会抛出bad_any_cast的异常
+	try
+	{
+		std::cout << boost::any_cast<int>(any_type_a) << std::endl;
+	}
+	catch (const boost::bad_any_cast& ec)
+	{
+		std::cerr << ec.what() << std::endl;
+	}
+
+	//用any_cast指向一个any类型
+	boost::any any_int = 1;
+
+	//为了便于理解,此处写为 *i,事实上int* i和int *i是一样的,i是一个int型的指针,*i是一个int变量
+	//any_cast的<>中为要转换后的变量类型,此处为int,()中为参数,传入的是any类型变量的地址
+	int* i = boost::any_cast<int>(&any_int);
+
+	std::cout << *i << std::endl;
+
+	boost::variant<double, int, std::string> v;
+	v = 37.13;
+	v = 37;
+	v = "lubaobao love fujunjun";
+
+	std::cout << boost::get<std::string>(v) << std::endl;
+
+	return 0;
+}
+
+#endif
+
+//学习boost序列化
+#if 1
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
+#include <boost/archive/text_oarchive.hpp>
+
+#include <boost/archive/text_iarchive.hpp>
+
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/xml_iarchive.hpp>
+
+//ios::app：　　　		//以追加的方式打开文件  
+//ios::ate：　　　		//文件打开后定位到文件尾，ios:app就包含有此属性  
+//ios::binary：　		//以二进制方式打开文件，缺省的方式是文本方式。两种方式的区别见前文  
+//ios::in：　　　		//文件以输入方式打开（文件数据输入到内存）  
+//ios::out：　　　		//文件以输出方式打开（内存数据输出到文件）  
+//ios::nocreate：		//不建立文件，所以文件不存在时打开失败  
+//ios::noreplace：		//不覆盖文件，所以打开文件时如果文件存在失败  
+//ios::trunc：　		//如果文件存在，把文件长度设为0
+
+#if 0
+void Save()
+{
+	//std::ios::out 文件不存在则创建,存在则打开
+	std::fstream fs("text.txt", std::ios::out);
+	if (fs.is_open())
+	{
+		boost::archive::text_oarchive oa(fs);
+		int i = 1;
+		oa << i;
+	}
+}
+
+void Load()
+{
+	std::fstream fs("text.txt", std::ios::in);
+	if (fs.is_open())
+	{
+		boost::archive::text_iarchive ia(fs);
+		int i = 0;
+		ia >> i;
+		std::cout << i << std::endl;
+	}
+}
+#endif
+
+std::stringstream ss;
+
+class Person
+{
+public:
+	Person()
+	{
+
+	}
+	Person(int age, std::string name) :_age(age), _name(name)
+	{
+
+	}
+
+	//此处的const本质是给成员函数的this指针加const限定,不允许修改成员变量,除非成员变量使用mutable修饰
+	int age()const
+	{
+		return _age;
+	}
+	std::string name()const
+	{
+		return _name;
+	}
+
+private:
+	friend class boost::serialization::access;
+
+	template<typename Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		//ar& _age;
+		ar& BOOST_SERIALIZATION_NVP(_age);
+		ar& BOOST_SERIALIZATION_NVP(_name);
+	}
+
+	std::string _name;
+	int _age;
+};
+
+void Save()
+{
+#if 0
+	boost::archive::text_oarchive oa(ss);
+	Person p(18, "lubaobao");
+	oa << p;
+#endif
+	std::fstream fs("text.xml", std::ios::out);
+	boost::archive::xml_oarchive oa(fs);
+	Person p(18, "lubaobao");
+	oa << BOOST_SERIALIZATION_NVP(p);
+}
+
+void Load()
+{
+#if 0
+	boost::archive::text_iarchive ia(ss);
+	Person p;
+	ia >> p;
+	std::cout << p.age() << std::endl;
+#endif
+	std::fstream fs("text.xml", std::ios::in);
+	boost::archive::xml_iarchive ia(fs);
+	Person p;
+	ia >> BOOST_SERIALIZATION_NVP(p);
+	std::cout << p.age() << std::endl;
+	std::cout << p.name() << std::endl;
+}
+
+int main()
+{
+#if 0
+	boost::archive::text_oarchive oa(std::cout);
+
+	int i = 1;
+
+	oa << 1;
+#endif
+
+	Save();
+	Load();
 
 	return 0;
 }
