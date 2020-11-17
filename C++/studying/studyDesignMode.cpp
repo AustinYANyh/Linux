@@ -1,4 +1,5 @@
 #include <iostream>
+#include <mutex>
 
 #pragma  region 工厂模式
 typedef enum TankType
@@ -167,6 +168,174 @@ private:
 };
 #pragma endregion 
 
+#pragma region 适配器模式
+//A类不满足需求,B类来继承A类,然后B类适配新需求,使用过多会导致系统非常凌乱
+class Dequeue
+{
+public:
+	virtual void Push_Back(int data)
+	{
+		std::cout << "Dequeue Push Back: " << data << std::endl;
+	}
+	virtual void Push_Front(int data)
+	{
+		std::cout << "Dequeue Push Front: " << data << std::endl;
+	}
+	virtual void Pop_Back()
+	{
+		std::cout << "Dequeue Pop Back" << std::endl;
+	}
+	virtual void Pop_Front()
+	{
+		std::cout << "Dequeue Pop Front" << std::endl;
+	}
+};
+
+class Sequence
+{
+public:
+	virtual void Push(int data)
+	{
+
+	}
+	virtual void Pop()
+	{
+
+	}
+};
+
+//复合
+#if 0
+class Stack :public Sequence
+{
+public:
+	void Push(int x)
+	{
+		dequeue.Push_Front(x);
+	}
+	void Pop()
+	{
+		dequeue.Pop_Front();
+	}
+private:
+	Dequeue dequeue;
+};
+
+class Queue :public Sequence
+{
+public:
+	void Push(int x)
+	{
+		dequeue.Push_Back(x);
+	}
+	void Pop()
+	{
+		dequeue.Pop_Front();
+	}
+private:
+	Dequeue dequeue;
+};
+#endif
+
+//继承
+class Queue :public Sequence, private Dequeue
+{
+public:
+	void Push(int x)
+	{
+		Push_Back(x);
+	}
+	void Pop()
+	{
+		Pop_Front();
+	}
+};
+
+class Stack :public Sequence, private Dequeue
+{
+public:
+	void Push(int x)
+	{
+		Push_Front(x);
+	}
+	void Pop()
+	{
+		Pop_Front();
+	}
+};
+
+#pragma endregion
+
+#pragma region 单例模式
+std::mutex mutex;
+//构造函数私有,不能实例化对象,不能通过拷贝构造函数,赋值运算等方法实例化对象
+class Singleton
+{
+public:
+	static Singleton* GetInstance();
+	~Singleton() {};
+
+	void Hello()
+	{
+		std::cout << "Singleton has been instantiated" << std::endl;
+	}
+private:
+	Singleton() {};
+	Singleton(const Singleton& obj) = delete;
+	Singleton& opreator(const Singleton& obj) = delete;
+
+	static Singleton* _singleton;
+};
+
+//懒汉模式,不到非要使用时不会实例化
+#if 0
+Singleton* Singleton::_singleton = nullptr;
+
+Singleton* Singleton::GetInstance()
+{
+	if (_singleton == nullptr)
+	{
+		mutex.lock();
+		Singleton::_singleton = new Singleton();
+		mutex.unlock();
+	}
+	return _singleton;
+}
+#endif
+
+//饿汉模式,定义的时候就实例化
+Singleton* Singleton::_singleton = new Singleton();
+
+Singleton* Singleton::GetInstance()
+{
+	return _singleton;
+}
+#pragma endregion
+
+#include <vector>
+
+template<typename T>
+class MyModel
+{
+public:
+	MyModel()
+	{
+
+	}
+
+	void Insert(int x)
+	{
+		_list.push_back(x);
+	}
+
+	T operator[](const T& index)
+	{
+		return _list[index];
+	}
+private:
+	std::vector<T> _list;
+};
+
 int main()
 {
 	TankFactory* factory = new TankFactory();
@@ -184,6 +353,19 @@ int main()
 
 	Archer<PowerDamage>* archer = new Archer<PowerDamage>();
 	archer->Attack();
+
+	Stack* stack = new Stack();
+	stack->Push(5);
+	stack->Pop();
+
+	Singleton::GetInstance()->Hello();
+
+	MyModel<int> model;
+	model.Insert(1);
+	model.Insert(2);
+	model.Insert(3);
+
+	int a = model[1];
 
 	return 0;
 }
