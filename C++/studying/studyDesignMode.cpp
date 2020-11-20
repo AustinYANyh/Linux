@@ -312,6 +312,7 @@ Singleton* Singleton::GetInstance()
 }
 #pragma endregion
 
+#pragma region 重载运算符_类模板
 #include <vector>
 
 template<typename T>
@@ -323,17 +324,199 @@ public:
 
 	}
 
-	void Insert(int x)
+	void Insert(T x)
 	{
 		_list.push_back(x);
 	}
 
-	T operator[](const T& index)
+	T operator[](const int& index)
 	{
 		return _list[index];
 	}
 private:
 	std::vector<T> _list;
+};
+#pragma endregion
+
+#pragma region 原型模式
+class Clone
+{
+public:
+	virtual Clone* clone()
+	{
+		return nullptr;
+	}
+	virtual void show()
+	{
+
+	}
+};
+
+class Sheep :public Clone
+{
+public:
+	Sheep(std::string name, int age) :_name(name), _age(age)
+	{
+		std::cout << "Sheep() name address: " << &_name << std::endl;
+		std::cout << "Sheep() age address: " << &_age << std::endl;
+	}
+
+	Sheep(const Sheep& obj)
+	{
+		this->_age = obj._age;
+		this->_name = obj._name;
+
+		std::cout << "Sheep(const Sheep& obj) name address: " << &_name << std::endl;
+		std::cout << "Sheep(const Sheep& obj) age address: " << &_age << std::endl;
+	}
+
+	Clone* clone()
+	{
+		return new Sheep(*this);
+	}
+
+	void show()
+	{
+		std::cout << "name: " << _name << std::endl;
+		std::cout << "age: " << _age << std::endl;
+	}
+private:
+	std::string _name;
+	int _age;
+};
+#pragma endregion
+
+#pragma region 模板模式
+class Computer
+{
+public:
+	void Product()
+	{
+		InstallCpu();
+		InstallGpu();
+		InstallDisk();
+	}
+protected:
+	virtual void InstallCpu()
+	{
+
+	}
+	virtual void InstallGpu()
+	{
+
+	}
+	virtual void InstallDisk()
+	{
+
+	}
+};
+
+class ComputerA :public Computer
+{
+public:
+	void InstallCpu()
+	{
+		std::cout << "Inter Core i5" << std::endl;
+	}
+
+	void InstallGpu()
+	{
+		std::cout << "Nvdia GTX 1050Ti" << std::endl;
+	}
+
+	void InstallDisk()
+	{
+		std::cout << "SamSung 1T Disk" << std::endl;
+	}
+};
+
+class ComputerB :public Computer
+{
+public:
+	void InstallCpu()
+	{
+		std::cout << "Inter Core i7" << std::endl;
+	}
+
+	void InstallGpu()
+	{
+		std::cout << "Nvdia GTX 3090" << std::endl;
+	}
+
+	void InstallDisk()
+	{
+		std::cout << "SamSung 2T Disk" << std::endl;
+	}
+};
+#pragma  endregion
+
+class Control
+{
+public:
+	virtual void Start() = 0;
+	virtual void ShutDown() = 0;
+};
+
+class Host :public Control
+{
+public:
+	void Start()
+	{
+		std::cout << "Host Start" << std::endl;
+	}
+	void ShutDown()
+	{
+		std::cout << "Host ShutDown" << std::endl;
+	}
+};
+
+class Display :public Control
+{
+public:
+	void Start()
+	{
+		std::cout << "Display Start" << std::endl;
+	}
+	void ShutDown()
+	{
+		std::cout << "Display ShutDown" << std::endl;
+	}
+};
+
+class Extention :public Control
+{
+public:
+	void Start()
+	{
+		std::cout << "Extention Start" << std::endl;
+	}
+	void ShutDown()
+	{
+		std::cout << "Extention ShutDown" << std::endl;
+	}
+};
+
+
+class Ex_Computer :public Control
+{
+public:
+	void Start()
+	{
+		_host.Start();
+		_display.Start();
+		_extention.Start();
+	}
+
+	void ShutDown()
+	{
+		_host.ShutDown();
+		_display.ShutDown();
+		_extention.ShutDown();
+	}
+private:
+	Host _host;
+	Display _display;
+	Extention _extention;
 };
 
 int main()
@@ -360,12 +543,28 @@ int main()
 
 	Singleton::GetInstance()->Hello();
 
-	MyModel<int> model;
-	model.Insert(1);
-	model.Insert(2);
-	model.Insert(3);
+	MyModel<std::string> model;
+	model.Insert("lubaobao");
+	model.Insert("zuixihuan");
+	model.Insert("fujunjun");
 
-	int a = model[1];
+	std::cout << model[1] << std::endl;
+
+	Clone* s1 = new Sheep("lubaobao", 18);
+	s1->show();
+
+	Clone* s2 = s1->clone();
+	s2->show();
+
+	Computer* ca = new ComputerA();
+	ca->Product();
+
+	Computer* cb = new ComputerB();
+	cb->Product();
+
+	Ex_Computer* ex_computer = new Ex_Computer();
+	ex_computer->Start();
+	ex_computer->ShutDown();
 
 	return 0;
 }
