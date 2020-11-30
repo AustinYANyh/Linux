@@ -1,7 +1,8 @@
 #include <iostream>
+#include <algorithm>
 #include <mutex>
 
-#pragma  region 工厂模式
+#pragma  region 1.工厂模式
 typedef enum TankType
 {
 	Tank__99A,
@@ -111,7 +112,7 @@ public:
 };
 #pragma  endregion
 
-#pragma region 策略模式
+#pragma region 2.策略模式
 class Damage
 {
 public:
@@ -168,7 +169,7 @@ private:
 };
 #pragma endregion 
 
-#pragma region 适配器模式
+#pragma region 3.适配器模式
 //A类不满足需求,B类来继承A类,然后B类适配新需求,使用过多会导致系统非常凌乱
 class Dequeue
 {
@@ -266,7 +267,7 @@ public:
 
 #pragma endregion
 
-#pragma region 单例模式
+#pragma region 4.单例模式
 std::mutex mutex;
 //构造函数私有,不能实例化对象,不能通过拷贝构造函数,赋值运算等方法实例化对象
 class Singleton
@@ -338,7 +339,7 @@ private:
 };
 #pragma endregion
 
-#pragma region 原型模式
+#pragma region 5.原型模式
 class Clone
 {
 public:
@@ -386,7 +387,7 @@ private:
 };
 #pragma endregion
 
-#pragma region 模板模式
+#pragma region 6.模板模式
 class Computer
 {
 public:
@@ -450,6 +451,7 @@ public:
 };
 #pragma  endregion
 
+#pragma region 7.外观模式
 class Control
 {
 public:
@@ -496,8 +498,7 @@ public:
 	}
 };
 
-
-class Ex_Computer :public Control
+class Ex_Computer
 {
 public:
 	void Start()
@@ -517,6 +518,122 @@ private:
 	Host _host;
 	Display _display;
 	Extention _extention;
+};
+#pragma endregion
+
+class Order
+{
+public:
+	Order()
+	{
+
+	}
+
+	const std::string& Food()
+	{
+		std::cout << m_food << std::endl;
+		return m_food;
+	}
+	const std::string& Drink()
+	{
+		std::cout << m_drink << std::endl;
+		return m_drink;
+	}
+
+	void SetOrderFood(std::string food)
+	{
+		m_food = food;
+	}
+	void SetOrderDrink(std::string drink)
+	{
+		m_drink = drink;
+	}
+private:
+	std::string m_food;
+	std::string m_drink;
+};
+
+class OrderBuilder :public Order
+{
+public:
+	virtual ~OrderBuilder()
+	{
+		std::cout << "~OrderBuilder" << std::endl;
+	};
+	virtual void SetOrderDrink() = 0;
+	virtual void SetOrderFood() = 0;
+	virtual Order* GetOrder() = 0;
+private:
+	Order* m_order;
+};
+
+class VegetablesOrder :public OrderBuilder
+{
+public:
+	VegetablesOrder() { m_order = new Order(); }
+
+	~VegetablesOrder()
+	{
+		std::cout << "~VegetableOrder" << std::endl;
+	}
+
+	void SetOrderFood()
+	{
+		m_order->SetOrderFood("green vegetables");
+	}
+	void SetOrderDrink()
+	{
+		m_order->SetOrderDrink("nongfu spring");
+	}
+	Order* GetOrder()
+	{
+		return m_order;
+	}
+private:
+	Order* m_order;
+};
+
+class MeatOrder :public OrderBuilder
+{
+public:
+	MeatOrder() { m_order = new Order(); }
+
+	~MeatOrder()
+	{
+		std::cout << "~MeatOrder" << std::endl;
+	}
+
+	void SetOrderFood()
+	{
+		m_order->SetOrderFood("chicken meat");
+	}
+	void SetOrderDrink()
+	{
+		m_order->SetOrderDrink("ganten bai sui shan");
+	}
+	Order* GetOrder()
+	{
+		return m_order;
+	}
+private:
+	Order* m_order;
+};
+
+class Director
+{
+public:
+	Director(OrderBuilder* builder) :m_builder(builder)
+	{
+
+	}
+
+	void Construct()
+	{
+		m_builder->SetOrderDrink();
+		m_builder->SetOrderFood();
+	}
+private:
+	OrderBuilder* m_builder;
 };
 
 int main()
@@ -565,6 +682,28 @@ int main()
 	Ex_Computer* ex_computer = new Ex_Computer();
 	ex_computer->Start();
 	ex_computer->ShutDown();
+
+	int g_a = 5;
+
+	[&g_a]
+	{
+		g_a++;
+		std::cout << g_a << std::endl;
+	}();
+
+	std::cout << "now " << g_a << std::endl;
+
+	std::vector<int> v = { 1,2,3,4,5 };
+	for_each(v.begin(), v.end(), [](int& i) {std::cout << i << std::endl; });
+
+	OrderBuilder* builder = new MeatOrder();
+	Director* director = new Director(builder);
+
+	director->Construct();
+
+	Order* order = builder->GetOrder();
+	order->Drink();
+	order->Food();
 
 	return 0;
 }
